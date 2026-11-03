@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Snake Game</title>
+    <title>Snake Game - Version 3</title>
 
     <style>
         canvas {
@@ -17,9 +17,11 @@
 
     <h1>Snake Game</h1>
 
+    <h3 id="score">Score: 0</h3>
+
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <p>Use the arrow keys to control the snake.</p>
+    <p>Use arrow keys to control the snake.</p>
 
     <script>
 
@@ -55,6 +57,8 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Draw food
+
             ctx.fillStyle = "red";
 
             ctx.fillRect(
@@ -63,6 +67,8 @@
                 gridSize,
                 gridSize
             );
+
+            // Draw snake
 
             ctx.fillStyle = "black";
 
@@ -124,6 +130,41 @@
         });
 
 
+        // GENERATE FOOD
+
+        function generateFood() {
+
+            let newFood;
+
+            do {
+
+                newFood = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount)
+                };
+
+            } while (
+                snake.some(segment =>
+                    segment.x === newFood.x &&
+                    segment.y === newFood.y
+                )
+            );
+
+            food = newFood;
+
+        }
+
+
+        // UPDATE SCORE
+
+        function updateScore() {
+
+            document.getElementById("score").textContent =
+                "Score: " + score;
+
+        }
+
+
         // MOVE SNAKE
 
         function updateGame() {
@@ -135,9 +176,27 @@
                 y: head.y + direction.y
             };
 
+            // Check if food is eaten
+
+            const eatingFood =
+                newHead.x === food.x &&
+                newHead.y === food.y;
+
             snake.unshift(newHead);
 
-            snake.pop();
+            if (eatingFood) {
+
+                score += 10;
+
+                updateScore();
+
+                generateFood();
+
+            } else {
+
+                snake.pop();
+
+            }
 
             canChangeDirection = true;
 
