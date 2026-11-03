@@ -7,9 +7,28 @@
     <title>Snake Game</title>
 
     <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
         canvas {
             border: 2px solid black;
         }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        #gameOver {
+            color: red;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
     </style>
 </head>
 
@@ -20,6 +39,10 @@
     <h3 id="score">Score: 0</h3>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <p id="gameOver"></p>
+
+    <button onclick="restartGame()">Restart Game</button>
 
     <p>Use arrow keys to control the snake.</p>
 
@@ -33,22 +56,43 @@
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
 
+        let snake;
+        let direction;
+        let food;
+        let score;
+        let gameOver;
+        let canChangeDirection;
 
-        // INITIAL STATE
+        let gameInterval;
 
-        let snake = [
-            { x: 10, y: 10 },
-            { x: 9, y: 10 },
-            { x: 8, y: 10 }
-        ];
 
-        let direction = { x: 1, y: 0 };
+        // INITIALIZE GAME
 
-        let canChangeDirection = true;
+        function initializeGame() {
 
-        let food = { x: 15, y: 15 };
+            snake = [
+                { x: 10, y: 10 },
+                { x: 9, y: 10 },
+                { x: 8, y: 10 }
+            ];
 
-        let score = 0;
+            direction = { x: 1, y: 0 };
+
+            food = { x: 15, y: 15 };
+
+            score = 0;
+
+            gameOver = false;
+
+            canChangeDirection = true;
+
+            document.getElementById("gameOver").textContent = "";
+
+            updateScore();
+
+            drawGame();
+
+        }
 
 
         // DRAW GAME
@@ -90,7 +134,7 @@
 
         document.addEventListener("keydown", function(event) {
 
-            if (!canChangeDirection) return;
+            if (gameOver || !canChangeDirection) return;
 
             let newDirection = null;
 
@@ -165,9 +209,25 @@
         }
 
 
+        // GAME OVER
+
+        function endGame() {
+
+            gameOver = true;
+
+            clearInterval(gameInterval);
+
+            document.getElementById("gameOver").textContent =
+                "GAME OVER! Your score: " + score;
+
+        }
+
+
         // MOVE SNAKE
 
         function updateGame() {
+
+            if (gameOver) return;
 
             const head = snake[0];
 
@@ -176,11 +236,47 @@
                 y: head.y + direction.y
             };
 
-            // Check if food is eaten
+            // Check food
 
             const eatingFood =
                 newHead.x === food.x &&
                 newHead.y === food.y;
+
+            // Check wall collision
+
+            if (
+                newHead.x < 0 ||
+                newHead.x >= tileCount ||
+                newHead.y < 0 ||
+                newHead.y >= tileCount
+            ) {
+
+                endGame();
+
+                return;
+
+            }
+
+            // Check body collision
+
+            const bodyToCheck = eatingFood
+                ? snake
+                : snake.slice(0, -1);
+
+            const hitBody = bodyToCheck.some(segment =>
+                segment.x === newHead.x &&
+                segment.y === newHead.y
+            );
+
+            if (hitBody) {
+
+                endGame();
+
+                return;
+
+            }
+
+            // Move snake
 
             snake.unshift(newHead);
 
@@ -205,11 +301,24 @@
         }
 
 
-        // GAME LOOP
+        // RESTART GAME
 
-        drawGame();
+        function restartGame() {
 
-        setInterval(updateGame, 200);
+            clearInterval(gameInterval);
+
+            initializeGame();
+
+            gameInterval = setInterval(updateGame, 200);
+
+        }
+
+
+        // START GAME
+
+        initializeGame();
+
+        gameInterval = setInterval(updateGame, 200);
 
     </script>
 
