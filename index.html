@@ -1,72 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Snake Game</title>
 
     <style>
-
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: darkgreen;
         }
 
         canvas {
-            border: 2px solid black;
+            background-color: white;
+            border: 3px solid black;
+        }
+
+        .scoreboard {
+            font-size: 18px;
+            font-weight: bold;
         }
 
         button {
             padding: 10px 20px;
-            margin: 10px;
+            margin: 8px;
+            font-size: 16px;
             cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: darkgreen;
+            color: white;
         }
 
-        #gameOver {
-            color: red;
-            font-size: 24px;
+        button:hover {
+            background-color: green;
+        }
+
+        #message {
+            font-size: 22px;
             font-weight: bold;
+            color: red;
         }
 
     </style>
+
 </head>
 
 <body>
 
-    <h1>Snake Game</h1>
+    <h1> Snake Game</h1>
 
-    <h3 id="score">Score: 0</h3>
+    <div class="scoreboard">
+
+        <p id="score">Score: 0</p>
+
+        <p id="highScore">High Score: 0</p>
+
+    </div>
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <p id="gameOver"></p>
+    <p id="message"></p>
 
-    <button onclick="restartGame()">Restart Game</button>
+    <button onclick="togglePause()">Pause / Resume</button>
 
-    <p>Use arrow keys to control the snake.</p>
+    <button onclick="restartGame()">Restart</button>
+
+    <p>Use the arrow keys to control the snake.</p>
 
     <script>
 
+
+        // =========================
         // GAME SETUP
+        // =========================
 
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
-
         const gridSize = 20;
         const tileCount = canvas.width / gridSize;
+
+
+        // =========================
+        // GAME VARIABLES
+        // =========================
 
         let snake;
         let direction;
         let food;
-        let score;
-        let gameOver;
-        let canChangeDirection;
-
+        let score = 0;
+        let highScore = Number(localStorage.getItem("snakeHighScore")) || 0;
+        let gameOver = false;
+        let paused = false;
+        let canChangeDirection = true;
         let gameInterval;
+        let speed = 200;
 
 
+        // =========================
         // INITIALIZE GAME
+        // =========================
 
         function initializeGame() {
 
@@ -77,34 +116,29 @@
             ];
 
             direction = { x: 1, y: 0 };
-
-            food = { x: 15, y: 15 };
-
             score = 0;
-
+            speed = 200;
             gameOver = false;
-
+            paused = false;
             canChangeDirection = true;
-
-            document.getElementById("gameOver").textContent = "";
-
+            generateFood();
             updateScore();
-
+            updateHighScore();
+            document.getElementById("message").textContent = "";
             drawGame();
-
         }
 
 
+        // =========================
         // DRAW GAME
+        // =========================
 
         function drawGame() {
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Draw food
 
             ctx.fillStyle = "red";
-
             ctx.fillRect(
                 food.x * gridSize,
                 food.y * gridSize,
@@ -112,12 +146,11 @@
                 gridSize
             );
 
+
             // Draw snake
 
-            ctx.fillStyle = "black";
-
-            for (const segment of snake) {
-
+            snake.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? "darkgreen" : "limegreen";
                 ctx.fillRect(
                     segment.x * gridSize,
                     segment.y * gridSize,
@@ -125,37 +158,48 @@
                     gridSize
                 );
 
-            }
+                ctx.strokeStyle = "black";
+                ctx.strokeRect(
+                    segment.x * gridSize,
+                    segment.y * gridSize,
+                    gridSize,
+                    gridSize
+                );
+
+            });
 
         }
 
 
+        // =========================
         // KEYBOARD CONTROLS
+        // =========================
 
         document.addEventListener("keydown", function(event) {
 
-            if (gameOver || !canChangeDirection) return;
-
+            if (gameOver || paused || !canChangeDirection) return;
             let newDirection = null;
+            switch (event.key) {
 
-            if (event.key === "ArrowUp") {
-                newDirection = { x: 0, y: -1 };
-            }
+                case "ArrowUp":
+                    newDirection = { x: 0, y: -1 };
+                    break;
 
-            else if (event.key === "ArrowDown") {
-                newDirection = { x: 0, y: 1 };
-            }
+                case "ArrowDown":
+                    newDirection = { x: 0, y: 1 };
+                    break;
 
-            else if (event.key === "ArrowLeft") {
-                newDirection = { x: -1, y: 0 };
-            }
+                case "ArrowLeft":
+                    newDirection = { x: -1, y: 0 };
+                    break;
 
-            else if (event.key === "ArrowRight") {
-                newDirection = { x: 1, y: 0 };
+                case "ArrowRight":
+                    newDirection = { x: 1, y: 0 };
+                    break;
+
             }
 
             if (newDirection) {
-
                 event.preventDefault();
 
                 if (
@@ -164,24 +208,20 @@
                 ) {
 
                     direction = newDirection;
-
                     canChangeDirection = false;
-
                 }
-
             }
-
         });
 
 
+        // =========================
         // GENERATE FOOD
+        // =========================
 
         function generateFood() {
-
             let newFood;
 
             do {
-
                 newFood = {
                     x: Math.floor(Math.random() * tileCount),
                     y: Math.floor(Math.random() * tileCount)
@@ -193,13 +233,13 @@
                     segment.y === newFood.y
                 )
             );
-
             food = newFood;
-
         }
 
 
+        // =========================
         // UPDATE SCORE
+        // =========================
 
         function updateScore() {
 
@@ -209,38 +249,47 @@
         }
 
 
-        // GAME OVER
+        // =========================
+        // UPDATE HIGH SCORE
+        // =========================
 
-        function endGame() {
-
-            gameOver = true;
-
-            clearInterval(gameInterval);
-
-            document.getElementById("gameOver").textContent =
-                "GAME OVER! Your score: " + score;
-
+        function updateHighScore() {
+            document.getElementById("highScore").textContent =
+                "High Score: " + highScore;
         }
 
 
-        // MOVE SNAKE
+        // =========================
+        // GAME OVER
+        // =========================
+
+        function endGame() {
+            gameOver = true;
+            clearInterval(gameInterval);
+            document.getElementById("message").textContent =
+                "GAME OVER! Final Score: " + score;
+        }
+
+
+        // =========================
+        // UPDATE GAME
+        // =========================
 
         function updateGame() {
-
-            if (gameOver) return;
-
+            if (gameOver || paused) return;
             const head = snake[0];
-
             const newHead = {
                 x: head.x + direction.x,
                 y: head.y + direction.y
             };
 
-            // Check food
+
+            // Check if food is eaten
 
             const eatingFood =
                 newHead.x === food.x &&
                 newHead.y === food.y;
+
 
             // Check wall collision
 
@@ -257,6 +306,7 @@
 
             }
 
+
             // Check body collision
 
             const bodyToCheck = eatingFood
@@ -269,58 +319,85 @@
             );
 
             if (hitBody) {
-
                 endGame();
-
                 return;
-
             }
+
 
             // Move snake
 
             snake.unshift(newHead);
 
+
+            // Eating food
+
             if (eatingFood) {
-
                 score += 10;
-
                 updateScore();
-
                 generateFood();
 
+
+                // Update high score
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem("snakeHighScore", highScore);
+                    updateHighScore();
+                }
+
+
+                // Increase speed
+
+                if (speed > 70) {
+                    speed -= 10;
+                    clearInterval(gameInterval);
+                    gameInterval = setInterval(updateGame, speed);
+                }
             } else {
-
                 snake.pop();
-
             }
 
             canChangeDirection = true;
-
             drawGame();
-
         }
 
 
+        // =========================
+        // PAUSE AND RESUME
+        // =========================
+
+        function togglePause() {
+            if (gameOver) return;
+            paused = !paused;
+            if (paused) {
+                document.getElementById("message").textContent =
+                    "GAME PAUSED";
+            } else {
+                document.getElementById("message").textContent = "";
+            }
+        }
+
+
+        // =========================
         // RESTART GAME
+        // =========================
 
         function restartGame() {
-
             clearInterval(gameInterval);
-
             initializeGame();
-
-            gameInterval = setInterval(updateGame, 200);
-
+            gameInterval = setInterval(updateGame, speed);
         }
 
 
+        // =========================
         // START GAME
+        // =========================
 
         initializeGame();
-
-        gameInterval = setInterval(updateGame, 200);
+        gameInterval = setInterval(updateGame, speed);
 
     </script>
 
 </body>
+
 </html>
