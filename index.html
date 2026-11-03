@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Snake Game</title>
 
     <style>
@@ -18,7 +19,7 @@
 
     <canvas id="gameCanvas" width="400" height="400"></canvas>
 
-    <p id="info">Snake is moving!</p>
+    <p>Use the arrow keys to control the snake.</p>
 
     <script>
 
@@ -41,6 +42,8 @@
 
         let direction = { x: 1, y: 0 };
 
+        let canChangeDirection = true;
+
         let food = { x: 15, y: 15 };
 
         let score = 0;
@@ -52,8 +55,6 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw food
-
             ctx.fillStyle = "red";
 
             ctx.fillRect(
@@ -62,8 +63,6 @@
                 gridSize,
                 gridSize
             );
-
-            // Draw snake
 
             ctx.fillStyle = "black";
 
@@ -81,6 +80,50 @@
         }
 
 
+        // KEYBOARD CONTROLS
+
+        document.addEventListener("keydown", function(event) {
+
+            if (!canChangeDirection) return;
+
+            let newDirection = null;
+
+            if (event.key === "ArrowUp") {
+                newDirection = { x: 0, y: -1 };
+            }
+
+            else if (event.key === "ArrowDown") {
+                newDirection = { x: 0, y: 1 };
+            }
+
+            else if (event.key === "ArrowLeft") {
+                newDirection = { x: -1, y: 0 };
+            }
+
+            else if (event.key === "ArrowRight") {
+                newDirection = { x: 1, y: 0 };
+            }
+
+            if (newDirection) {
+
+                event.preventDefault();
+
+                if (
+                    newDirection.x !== -direction.x ||
+                    newDirection.y !== -direction.y
+                ) {
+
+                    direction = newDirection;
+
+                    canChangeDirection = false;
+
+                }
+
+            }
+
+        });
+
+
         // MOVE SNAKE
 
         function updateGame() {
@@ -95,6 +138,8 @@
             snake.unshift(newHead);
 
             snake.pop();
+
+            canChangeDirection = true;
 
             drawGame();
 
